@@ -344,12 +344,27 @@ class NotificationSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RadiusExpansionSummary(BaseModel):
+    """DTO for simulated geo-spatial radius expansion summary."""
+    expansion_performed: bool
+    previous_radius_km: float
+    expanded_radius_km: float
+    additional_donors_found: int
+    total_donors_after_expansion: int
+    expanded_donors: list[ScoredDonorResult]
+    expansion_reason: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class AICommanderResponse(AIMatchResponse):
     """DTO for extended AI Commander workflow decision response."""
     next_action: str = Field(..., description="Determined next workflow action: 'reserve_blood_bank', 'notify_top_donors', or 'manual_review'")
     workflow_reason: str = Field(..., description="Detailed explanation of the workflow decision")
     reservation: Optional[ReservationInfo] = None
     notification: Optional[NotificationSummary] = None
+    radius_expansion: Optional[RadiusExpansionSummary] = None
+
 
 
 
