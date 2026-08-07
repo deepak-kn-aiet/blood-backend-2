@@ -394,7 +394,8 @@ class AICommanderResponse(AIMatchResponse):
 
 class ChatRequest(BaseModel):
     """DTO for incoming AI Chat assistant requests."""
-    message: str = Field(..., description="User query message for the Blood Relay AI Assistant")
+    message: str = Field(..., min_length=1, description="User query message for the Blood Relay AI Assistant")
+
 
 
 class ChatResponse(BaseModel):
