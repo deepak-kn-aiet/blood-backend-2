@@ -1,8 +1,8 @@
 """
 AI Matching Engine Router Module
 
-Defines the POST /ai/match/{request_id} endpoint to trigger the intelligent donor
-and blood bank recommendation workflow for emergency requests.
+Defines the POST /ai/match/{request_id} and POST /ai/commander/{request_id} endpoints
+to trigger intelligent donor and blood bank recommendation workflows for emergency requests.
 """
 
 import uuid
@@ -14,6 +14,7 @@ from app.models import User, EmergencyRequest
 from app.schemas import AIMatchResponse
 from app.auth import get_current_user
 from app.services.matching_service import match_request_source
+from app.services.commander_service import execute_ai_commander
 
 router = APIRouter(prefix="/ai", tags=["AI Matching Engine"])
 
@@ -54,3 +55,24 @@ def match_emergency_request(
         )
 
     return match_request_source(db, request_obj)
+
+
+@router.post(
+    "/commander/{request_id}",
+    response_model=AIMatchResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Execute single entry point AI Commander workflow for emergency request",
+)
+def commander_emergency_request(
+    request_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    AI Commander Orchestration Endpoint
+
+    - Serves as the unified orchestration entry point for the AI matching workflow.
+    - Validates request existence and delegates execution to `execute_ai_commander()`.
+    - Returns structured `AIMatchResponse` matching recommendations.
+    """
+    return execute_ai_commander(request_id, db)
