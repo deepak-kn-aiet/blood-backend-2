@@ -67,7 +67,7 @@ def expand_search_radius(
         )
 
         if dist <= expanded_radius_km:
-            scored = score_donor(d, request_obj.latitude, request_obj.longitude)
+            scored = score_donor(d, d.user, request_obj)
             if scored:
                 expanded_scored_list.append(scored)
 

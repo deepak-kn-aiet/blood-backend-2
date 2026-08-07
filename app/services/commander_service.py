@@ -102,9 +102,7 @@ def execute_ai_commander(request_id: uuid.UUID, db: Session) -> AICommanderRespo
                 )
                 scored_list = []
                 for d in active_donors:
-                    scored = score_donor(
-                        d, request_obj.latitude, request_obj.longitude
-                    )
+                    scored = score_donor(d, d.user, request_obj)
                     if scored:
                         scored_list.append(scored)
                 scored_list.sort(key=lambda x: x.score, reverse=True)
