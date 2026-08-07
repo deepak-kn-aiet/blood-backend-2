@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User, EmergencyRequest
-from app.schemas import AIMatchResponse
+from app.schemas import AIMatchResponse, AICommanderResponse
 from app.auth import get_current_user
 from app.services.matching_service import match_request_source
 from app.services.commander_service import execute_ai_commander
@@ -59,7 +59,7 @@ def match_emergency_request(
 
 @router.post(
     "/commander/{request_id}",
-    response_model=AIMatchResponse,
+    response_model=AICommanderResponse,
     status_code=status.HTTP_200_OK,
     summary="Execute single entry point AI Commander workflow for emergency request",
 )
@@ -73,6 +73,7 @@ def commander_emergency_request(
 
     - Serves as the unified orchestration entry point for the AI matching workflow.
     - Validates request existence and delegates execution to `execute_ai_commander()`.
-    - Returns structured `AIMatchResponse` matching recommendations.
+    - Returns structured `AICommanderResponse` containing AI matching output and next_action workflow decision.
     """
     return execute_ai_commander(request_id, db)
+
