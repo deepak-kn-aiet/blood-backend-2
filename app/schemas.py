@@ -320,11 +320,37 @@ class ReservationInfo(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class DonorNotification(BaseModel):
+    """DTO for simulated individual donor notification record."""
+    donor_id: uuid.UUID
+    full_name: str
+    phone_number: str
+    score: float
+    status: str = "queued"
+    message: str = "Emergency blood request nearby. Please respond if available."
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationSummary(BaseModel):
+    """DTO for simulated donor notification batch summary."""
+    notification_success: bool
+    total_donors: int
+    notified_count: int
+    failed_count: int
+    notification_timestamp: datetime
+    notifications: list[DonorNotification]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class AICommanderResponse(AIMatchResponse):
     """DTO for extended AI Commander workflow decision response."""
     next_action: str = Field(..., description="Determined next workflow action: 'reserve_blood_bank', 'notify_top_donors', or 'manual_review'")
     workflow_reason: str = Field(..., description="Detailed explanation of the workflow decision")
     reservation: Optional[ReservationInfo] = None
+    notification: Optional[NotificationSummary] = None
+
 
 
 
