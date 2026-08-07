@@ -413,8 +413,7 @@ class ChatRequest(BaseModel):
     """DTO for incoming AI Chat assistant requests."""
     message: str = Field(..., min_length=1, description="User query message for the Blood Relay AI Assistant")
     context: Optional[AIContext] = Field(None, description="Optional AI Commander execution context for Explainable AI queries")
-
-
+    session_id: Optional[uuid.UUID] = Field(None, description="Optional session UUID for multi-turn conversation memory")
 
 
 class ChatResponse(BaseModel):
@@ -422,8 +421,32 @@ class ChatResponse(BaseModel):
     answer: str
     model: str
     timestamp: datetime
+    session_id: uuid.UUID
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ChatMessage(BaseModel):
+    """DTO for an individual chat history message."""
+    role: str = Field(..., description="'user' or 'assistant'")
+    content: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ChatHistoryResponse(BaseModel):
+    """DTO for returning chat session history."""
+    session_id: uuid.UUID
+    messages: list[ChatMessage]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ClearChatResponse(BaseModel):
+    """DTO for clear chat session response."""
+    success: bool
+    message: str
+
 
 
 
