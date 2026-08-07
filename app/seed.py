@@ -6,7 +6,15 @@ Generates Users, Donors, Hospitals, Blood Banks, Inventories, and Emergency Requ
 
 Usage:
     python -m app.seed
+    OR
+    python app/seed.py
 """
+
+import sys
+from pathlib import Path
+
+# Ensure project root directory is on sys.path for both module and direct execution
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import random
 from datetime import datetime, timedelta, timezone
