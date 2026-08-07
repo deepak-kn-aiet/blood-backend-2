@@ -4,7 +4,8 @@ AI Commander Orchestration Service Module
 Provides the high-level orchestration entry point for AI workflow execution.
 Validates emergency requests, delegates recommendation logic to matching_service,
 evaluates workflow decisions via workflow_service, executes blood bank reservations,
-triggers donor notification simulations, and executes radius expansion logic.
+triggers donor notification simulations, executes radius expansion logic, and escalates
+unfulfilled requests to nearby hospitals.
 """
 
 import uuid
@@ -22,22 +23,25 @@ from app.services.workflow_service import determine_next_action
 from app.services.reservation_service import reserve_blood_units
 from app.services.notification_service import notify_top_donors
 from app.services.radius_service import expand_search_radius
+from app.services.escalation_service import escalate_to_nearby_hospitals
 
 
 def execute_ai_commander(request_id: uuid.UUID, db: Session) -> AICommanderResponse:
     """
     Orchestrates the complete AI recommendation, workflow decision, blood bank reservation,
-    donor notification, and radius expansion pipeline:
+    donor notification, radius expansion, and hospital escalation pipeline:
     1. Loads specified EmergencyRequest entity.
     2. Validates request existence and non-soft-deleted state (raises 404 if invalid).
     3. Computes AI match recommendation via matching_service.
     4. Evaluates workflow decision via workflow_service.
     5. If next_action == "reserve_blood_bank":
-       - Executes blood bank reservation (reservation != None, notification = None, radius_expansion = None).
-       - On reservation failure: Fallbacks next_action to "notify_top_donors", triggers notifications and radius expansion.
+       - Executes blood bank reservation (reservation != None, notification = None, radius_expansion = None, hospital_escalation = None).
+       - On reservation failure: Fallbacks next_action to "notify_top_donors", triggers notifications, radius expansion, and escalation if required.
     6. If next_action == "notify_top_donors":
        - Executes donor notification simulation (notification != None).
-       - Simulates unanswered initial batch and executes radius expansion to 25km (radius_expansion != None).
+       - Executes radius expansion to 25km (radius_expansion != None).
+       - If radius_expansion.additional_donors_found == 0:
+         - Triggers hospital escalation simulation (hospital_escalation != None).
     7. If next_action == "manual_review":
        - Sets all optional fields to None.
     8. Returns combined AICommanderResponse.
@@ -66,6 +70,7 @@ def execute_ai_commander(request_id: uuid.UUID, db: Session) -> AICommanderRespo
     reservation_info = None
     notification_info = None
     radius_info = None
+    escalation_info = None
 
     # 3. Branch A: Blood Bank Reservation
     if workflow_decision.get("next_action") == "reserve_blood_bank":
@@ -105,7 +110,7 @@ def execute_ai_commander(request_id: uuid.UUID, db: Session) -> AICommanderRespo
                 scored_list.sort(key=lambda x: x.score, reverse=True)
                 ai_result.top_donors = scored_list[:5]
 
-            # Trigger notification & radius expansion simulation for fallback donors
+            # Trigger notification simulation for fallback donors
             notification_info = notify_top_donors(
                 db, request_obj, ai_result.top_donors
             )
@@ -113,7 +118,10 @@ def execute_ai_commander(request_id: uuid.UUID, db: Session) -> AICommanderRespo
                 db, request_obj, ai_result.top_donors
             )
 
-    # 4. Branch B: Donor Notification & Radius Expansion Simulation
+            if radius_info and radius_info.additional_donors_found == 0:
+                escalation_info = escalate_to_nearby_hospitals(db, request_obj)
+
+    # 4. Branch B: Donor Notification, Radius Expansion & Hospital Escalation Simulation
     elif workflow_decision.get("next_action") == "notify_top_donors":
         notification_info = notify_top_donors(
             db, request_obj, ai_result.top_donors
@@ -122,12 +130,16 @@ def execute_ai_commander(request_id: uuid.UUID, db: Session) -> AICommanderRespo
             db, request_obj, ai_result.top_donors
         )
 
-    # 5. Branch C: Manual Review (reservation = None, notification = None, radius_expansion = None)
+        if radius_info and radius_info.additional_donors_found == 0:
+            escalation_info = escalate_to_nearby_hospitals(db, request_obj)
+
+    # 5. Branch C: Manual Review (all optional fields None)
 
     response_data = ai_result.model_dump()
     response_data.update(workflow_decision)
     response_data["reservation"] = reservation_info
     response_data["notification"] = notification_info
     response_data["radius_expansion"] = radius_info
+    response_data["hospital_escalation"] = escalation_info
 
     return AICommanderResponse(**response_data)

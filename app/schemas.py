@@ -357,6 +357,31 @@ class RadiusExpansionSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class HospitalEscalation(BaseModel):
+    """DTO for simulated individual hospital escalation record."""
+    hospital_id: uuid.UUID
+    hospital_name: str
+    contact_number: str
+    city: str
+    distance_km: float
+    status: str = "queued"
+    message: str = "Emergency blood request could not be fulfilled. Please review and assist."
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class HospitalEscalationSummary(BaseModel):
+    """DTO for simulated nearby hospital escalation batch summary."""
+    escalation_success: bool
+    total_hospitals_checked: int
+    hospitals_notified: int
+    escalation_timestamp: datetime
+    escalation_reason: str
+    nearby_hospitals: list[HospitalEscalation]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class AICommanderResponse(AIMatchResponse):
     """DTO for extended AI Commander workflow decision response."""
     next_action: str = Field(..., description="Determined next workflow action: 'reserve_blood_bank', 'notify_top_donors', or 'manual_review'")
@@ -364,6 +389,8 @@ class AICommanderResponse(AIMatchResponse):
     reservation: Optional[ReservationInfo] = None
     notification: Optional[NotificationSummary] = None
     radius_expansion: Optional[RadiusExpansionSummary] = None
+    hospital_escalation: Optional[HospitalEscalationSummary] = None
+
 
 
 
