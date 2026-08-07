@@ -306,10 +306,26 @@ class AIMatchResponse(BaseModel):
     search_summary: AIMatchSearchSummary
 
 
+class ReservationInfo(BaseModel):
+    """DTO for Blood Bank inventory reservation details."""
+    reservation_success: bool
+    blood_bank_id: Optional[uuid.UUID] = None
+    blood_bank_name: Optional[str] = None
+    blood_group: Optional[str] = None
+    units_reserved: Optional[int] = None
+    remaining_units: Optional[int] = None
+    reservation_timestamp: Optional[datetime] = None
+    reason: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class AICommanderResponse(AIMatchResponse):
     """DTO for extended AI Commander workflow decision response."""
     next_action: str = Field(..., description="Determined next workflow action: 'reserve_blood_bank', 'notify_top_donors', or 'manual_review'")
     workflow_reason: str = Field(..., description="Detailed explanation of the workflow decision")
+    reservation: Optional[ReservationInfo] = None
+
 
 
 
