@@ -392,6 +392,21 @@ class AICommanderResponse(AIMatchResponse):
     hospital_escalation: Optional[HospitalEscalationSummary] = None
 
 
+class ChatRequest(BaseModel):
+    """DTO for incoming AI Chat assistant requests."""
+    message: str = Field(..., description="User query message for the Blood Relay AI Assistant")
+
+
+class ChatResponse(BaseModel):
+    """DTO for AI Chat assistant responses."""
+    answer: str
+    model: str
+    timestamp: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+
 
 
 
