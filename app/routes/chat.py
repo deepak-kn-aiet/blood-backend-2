@@ -1,7 +1,8 @@
 """
 AI Assistant Router Module
 
-Provides the standalone POST /ai/chat endpoint for Blood Relay informational queries.
+Provides the standalone POST /ai/chat endpoint for Blood Relay informational queries
+and Explainable AI decision explanations.
 Protected with JWT authentication.
 """
 
@@ -18,13 +19,13 @@ router = APIRouter(prefix="/ai", tags=["AI Assistant"])
     "/chat",
     response_model=ChatResponse,
     summary="Chat with Blood Relay AI Assistant",
-    description="Provides an informational AI assistant answering blood donation, compatibility, and platform FAQs.",
+    description="Provides an informational AI assistant answering blood donation, compatibility, platform FAQs, and Explainable AI decision explanations.",
 )
 def chat_endpoint(
     request: ChatRequest,
     current_user: User = Depends(get_current_user),
 ) -> ChatResponse:
     """
-    Executes Gemini AI chat query for authenticated users.
+    Executes Gemini AI chat query with optional AI Commander decision context.
     """
-    return chat_with_gemini(request.message)
+    return chat_with_gemini(request.message, request.context)

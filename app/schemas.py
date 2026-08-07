@@ -392,9 +392,28 @@ class AICommanderResponse(AIMatchResponse):
     hospital_escalation: Optional[HospitalEscalationSummary] = None
 
 
+class AIContext(BaseModel):
+    """DTO for contextual AI Commander decision metadata passed to the Explainable AI Assistant."""
+    request_id: Optional[uuid.UUID] = None
+    recommended_source: Optional[str] = None
+    blood_bank_available: Optional[bool] = None
+    matched_blood_bank: Optional[dict] = None
+    top_donors: Optional[list[ScoredDonorResult]] = None
+    next_action: Optional[str] = None
+    workflow_reason: Optional[str] = None
+    reservation: Optional[dict] = None
+    notification: Optional[dict] = None
+    radius_expansion: Optional[dict] = None
+    hospital_escalation: Optional[dict] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ChatRequest(BaseModel):
     """DTO for incoming AI Chat assistant requests."""
     message: str = Field(..., min_length=1, description="User query message for the Blood Relay AI Assistant")
+    context: Optional[AIContext] = Field(None, description="Optional AI Commander execution context for Explainable AI queries")
+
 
 
 
