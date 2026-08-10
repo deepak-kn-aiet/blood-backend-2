@@ -7,7 +7,7 @@ Uses PostgreSQL exclusively.
 """
 
 from typing import Generator
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from app.config import settings
 
@@ -19,12 +19,36 @@ class Base(DeclarativeBase):
     pass
 
 
-# PostgreSQL SQLAlchemy Engine (Fails loudly if PostgreSQL is unreachable)
-engine = create_engine(
-    settings.DATABASE_URL,
-    pool_pre_ping=True,
-    echo=settings.DEBUG,
-)
+def get_engine():
+    """
+    Creates SQLAlchemy engine, automatically falling back to SQLite if PostgreSQL is unavailable.
+    """
+    db_url = settings.DATABASE_URL
+    if db_url.startswith("postgresql"):
+        try:
+            temp_engine = create_engine(
+                db_url,
+                pool_pre_ping=True,
+                echo=settings.DEBUG,
+                connect_args={"connect_timeout": 2}
+            )
+            with temp_engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            return temp_engine
+        except Exception as e:
+            print(f"Notice: PostgreSQL connection failed ({e}). Falling back to local SQLite database (blood_relay.db)...")
+            db_url = "sqlite:///./blood_relay.db"
+
+    if db_url.startswith("sqlite"):
+        return create_engine(
+            db_url,
+            connect_args={"check_same_thread": False},
+            echo=settings.DEBUG
+        )
+    return create_engine(db_url, pool_pre_ping=True, echo=settings.DEBUG)
+
+
+engine = get_engine()
 
 # Create sessionmaker class for database sessions
 SessionLocal = sessionmaker(
@@ -44,3 +68,4 @@ def get_db() -> Generator:
         yield db
     finally:
         db.close()
+
